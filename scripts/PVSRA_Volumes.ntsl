@@ -1,0 +1,121 @@
+// ============================================================================
+// PVSRA Suite para BlackArrow (NTSL) - Histograma de Volumes (Nova Janela)
+// Adaptacao & Expansao: Sunrise (elementaldocaos)
+// Base original (MT5):  japarico / Fernando H Rosa / Traderathome / Fisher755
+// Licenca:              Uso gratuito para a comunidade (proibida comercializacao)
+// Equivalente ao "#6 Volumes Suite (Black)" do template PVSRA MT5 v2-1
+// ============================================================================
+
+input
+  FonteVolume(1);         // 1 = Quantity (Lotes/Qtd) | 2 = Trades (Tick Volume/Forex) | 3 = Volume (Financeiro)
+  ModoSimples(false);     // false = Standard (Rising + Climax); true = Simple (apenas Climax)
+  PeriodoMediaVol(10);    // Periodo da media de volume PVSRA (padrao = 10)
+  MultRising(1.5);        // Multiplicador de Volume em Ascensao (1.5 = 150%)
+  MultClimax(2.0);        // Multiplicador de Volume Climax (2.0 = 200%)
+  MostrarMedia(false);    // Exibe linha da media de 10 periodos sobre o histograma
+  LarguraBarra(3);        // Espessura das barras do histograma (1 a 5)
+  AlertaClimax(false);    // Dispara alarme visual/sonoro em barras de Climax na barra atual
+
+var
+  vVol          : Float;
+  vSpreadVol    : Float;
+  vSomaVol      : Float;
+  vMediaVol     : Float;
+  vMaxSpreadVol : Float;
+  vTipoPVA      : Integer;  // 0 = Normal | 1 = Rising | 2 = Climax
+  vCorAtual     : Integer;
+  i             : Integer;
+
+  // Cores oficiais do "#6 Volumes Suite (Black)" no PVSRA mt5 v2-1.tpl
+  cBullClimax   : Integer;
+  cBearClimax   : Integer;
+  cBullRising   : Integer;
+  cBearRising   : Integer;
+  cVolNormal    : Integer;
+  cMediaLinha   : Integer;
+
+begin
+  cBullClimax := RGB(31, 192, 71);     // Verde Climax
+  cBearClimax := RGB(224, 1, 6);       // Vermelho Climax
+  cBullRising := RGB(17, 136, 255);    // Azul Rising
+  cBearRising := RGB(184, 51, 255);    // Violeta Rising (#6 Volumes Suite)
+  cVolNormal  := RGB(102, 99, 163);    // Roxo-Cinza Normal (Standard_Normal_Thin_Bar)
+  cMediaLinha := RGB(200, 200, 200);   // Cinza Claro (Linha da Media opcional)
+
+  // Selecao da fonte de volume
+  if (FonteVolume = 2) then
+    vVol := Trades
+  else if (FonteVolume = 3) then
+    vVol := Volume
+  else
+    vVol := Quantity;
+
+  vSpreadVol := vVol * (High - Low);
+
+  // Classificacao PVSRA (10 candles anteriores)
+  vTipoPVA  := 0;
+  vMediaVol := 0;
+
+  if (CurrentBar > PeriodoMediaVol) and (PeriodoMediaVol > 0) then
+  begin
+    vSomaVol      := 0;
+    vMaxSpreadVol := 0;
+
+    for i := 1 to PeriodoMediaVol do
+    begin
+      vSomaVol := vSomaVol + vVol[i];
+      if (vSpreadVol[i] > vMaxSpreadVol) then
+        vMaxSpreadVol := vSpreadVol[i];
+    end;
+
+    vMediaVol := vSomaVol / PeriodoMediaVol;
+
+    if (vVol > 0) and (vMediaVol > 0) then
+    begin
+      if (vVol >= (vMediaVol * MultClimax)) or
+         ((vMaxSpreadVol > 0) and (vSpreadVol >= vMaxSpreadVol)) then
+        vTipoPVA := 2
+      else if (not ModoSimples) and (vVol >= (vMediaVol * MultRising)) then
+        vTipoPVA := 1;
+    end;
+  end;
+
+  // Definicao da cor do histograma
+  if (vTipoPVA = 2) then
+  begin
+    if (Close > Open) then
+      vCorAtual := cBullClimax
+    else
+      vCorAtual := cBearClimax;
+  end
+  else if (vTipoPVA = 1) then
+  begin
+    if (Close > Open) then
+      vCorAtual := cBullRising
+    else
+      vCorAtual := cBearRising;
+  end
+  else
+    vCorAtual := cVolNormal;
+
+  // Plot 1: Histograma de Volume PVA
+  Plot(vVol);
+  SetPlotType(1, 1); // 1 = Histograma
+  SetPlotColor(1, vCorAtual);
+  SetPlotWidth(1, LarguraBarra);
+
+  // Plot 2: Linha da Media de 10 periodos (opcional)
+  if (MostrarMedia) and (vMediaVol > 0) then
+  begin
+    Plot2(vMediaVol);
+    SetPlotType(2, 0); // 0 = Linha
+    SetPlotColor(2, cMediaLinha);
+    SetPlotWidth(2, 1);
+  end
+  else
+    NoPlot(2);
+
+  // Alerta opcional em Climax na barra atual
+  if (AlertaClimax) and (LastBarOnChart) and (vTipoPVA = 2) then
+    Alert(vCorAtual);
+end;

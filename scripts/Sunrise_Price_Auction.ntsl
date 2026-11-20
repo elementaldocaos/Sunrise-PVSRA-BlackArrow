@@ -1,0 +1,194 @@
+// ============================================================================
+// PVSRA Suite para BlackArrow (NTSL) - VAH / VAL Dinamicos por TF + Valor ATR
+// Autor: Sunrise (elementaldocaos)
+// Licenca: Uso gratuito para a comunidade (proibida comercializacao)
+// ============================================================================
+
+input
+  // --- Volume Profile (VAH / VAL por Timeframe) ---
+  PeriodoVP(120);         // Quantidade de candles do Timeframe atual para calcular VAH/VAL
+  NumFaixas(40);          // Resolucao do perfil (entre 10 e 50 faixas de preco)
+  PercentualVA(70.0);     // Area de Valor em % (padrao institucional = 70%)
+  FonteVolume(1);         // 1 = Quantity (Qtd/Lotes) | 2 = Trades (Tick Volume) | 3 = Volume (Financeiro)
+  MostrarPOC(true);       // Exibe tambem a linha do POC (maior volume)
+
+  // --- Valor do ATR no Grafico ---
+  MostrarATR(true);       // Exibe o valor do ATR no candle atual (sem ocupar espaco extra)
+  PeriodoATR(14);         // Periodo do ATR (Wilder)
+  CasasDecimais(2);       // Casas decimais (GOLD/Indices=2 | Forex=5 | JPY=3)
+  TamanhoFonte(9);        // Tamanho da fonte do texto do ATR
+
+var
+  vHistVol       : Array[1..50] of Float;
+  vVol           : Float;
+  vMaxP          : Float;
+  vMinP          : Float;
+  vRange         : Float;
+  vPasso         : Float;
+  vSomaVolTotal  : Float;
+  vAlvoVA        : Float;
+  vVolAcum       : Float;
+  vVolBarra      : Float;
+  vVolParte      : Float;
+  vBinBot        : Float;
+  vBinTop        : Float;
+
+  vJanela        : Integer;
+  vFaixas        : Integer;
+  vPOCIdx        : Integer;
+  vUpperIdx      : Integer;
+  vLowerIdx      : Integer;
+  vContFaixas    : Integer;
+  i              : Integer;
+  b              : Integer;
+  vMaxBinVol     : Float;
+
+  vVAH           : Float;
+  vVAL           : Float;
+  vPOC           : Float;
+
+  vPeriodoWilder : Integer;
+  vATR           : Float;
+
+  cVAH           : Integer;
+  cVAL           : Integer;
+  cPOC           : Integer;
+  cATR           : Integer;
+
+begin
+  cVAH := RGB(255, 75, 110);    // Rosa/Vermelho Vivo - VAH
+  cVAL := RGB(0, 225, 150);     // Verde Menta - VAL
+  cPOC := RGB(255, 195, 0);     // Dourado - POC
+  cATR := RGB(230, 240, 255);   // Branco Azulado - Valor do ATR
+
+  // Serie de volume em todas as barras
+  if (FonteVolume = 2) then
+    vVol := Trades
+  else if (FonteVolume = 3) then
+    vVol := Volume
+  else
+    vVol := Quantity;
+
+  // ATR de Wilder continuo em todas as barras
+  vPeriodoWilder := (2 * PeriodoATR) - 1;
+  if (vPeriodoWilder < 1) then
+    vPeriodoWilder := 1;
+  vATR := MediaExp(vPeriodoWilder, TrueRange);
+
+  // Calculo e desenho apenas na barra atual (dinamico e por Timeframe)
+  if (LastBarOnChart) and (CurrentBar >= 5) then
+  begin
+    vFaixas := NumFaixas;
+    if (vFaixas < 10) then vFaixas := 10;
+    if (vFaixas > 50) then vFaixas := 50;
+
+    vJanela := PeriodoVP;
+    if (vJanela > CurrentBar) then vJanela := CurrentBar;
+    if (vJanela < 2) then vJanela := 2;
+
+    // 1. Extremos da janela no Timeframe atual
+    vMaxP := High[0];
+    vMinP := Low[0];
+    for i := 1 to vJanela - 1 do
+    begin
+      if (High[i] > vMaxP) then vMaxP := High[i];
+      if (Low[i] < vMinP) then vMinP := Low[i];
+    end;
+
+    for b := 1 to vFaixas do
+      vHistVol[b] := 0;
+
+    vRange := vMaxP - vMinP;
+    if (vRange > 0) then
+    begin
+      vPasso := vRange / vFaixas;
+      vSomaVolTotal := 0;
+
+      // 2. Distribuicao do volume pelas faixas de preco (sem conversao Float->Integer)
+      for i := 0 to vJanela - 1 do
+      begin
+        vVolBarra := vVol[i];
+        if (vVolBarra <= 0) then
+          vVolBarra := 1;
+
+        vContFaixas := 0;
+        for b := 1 to vFaixas do
+        begin
+          vBinBot := vMinP + ((b - 1) * vPasso);
+          vBinTop := vMinP + (b * vPasso);
+          if (High[i] >= vBinBot) and (Low[i] <= vBinTop) then
+            vContFaixas := vContFaixas + 1;
+        end;
+
+        if (vContFaixas > 0) then
+        begin
+          vVolParte := vVolBarra / vContFaixas;
+          for b := 1 to vFaixas do
+          begin
+            vBinBot := vMinP + ((b - 1) * vPasso);
+            vBinTop := vMinP + (b * vPasso);
+            if (High[i] >= vBinBot) and (Low[i] <= vBinTop) then
+              vHistVol[b] := vHistVol[b] + vVolParte;
+          end;
+          vSomaVolTotal := vSomaVolTotal + vVolBarra;
+        end;
+      end;
+
+      // 3. Localiza o POC (faixa de maior volume)
+      vPOCIdx := 1;
+      vMaxBinVol := vHistVol[1];
+      for b := 2 to vFaixas do
+      begin
+        if (vHistVol[b] > vMaxBinVol) then
+        begin
+          vMaxBinVol := vHistVol[b];
+          vPOCIdx := b;
+        end;
+      end;
+
+      // 4. Expande a Area de Valor (70%) a partir do POC
+      vUpperIdx := vPOCIdx;
+      vLowerIdx := vPOCIdx;
+      vVolAcum  := vHistVol[vPOCIdx];
+      vAlvoVA   := vSomaVolTotal * (PercentualVA / 100.0);
+
+      while (vVolAcum < vAlvoVA) and ((vUpperIdx < vFaixas) or (vLowerIdx > 1)) do
+      begin
+        if (vUpperIdx >= vFaixas) then
+        begin
+          vLowerIdx := vLowerIdx - 1;
+          vVolAcum  := vVolAcum + vHistVol[vLowerIdx];
+        end
+        else if (vLowerIdx <= 1) then
+        begin
+          vUpperIdx := vUpperIdx + 1;
+          vVolAcum  := vVolAcum + vHistVol[vUpperIdx];
+        end
+        else if (vHistVol[vUpperIdx + 1] >= vHistVol[vLowerIdx - 1]) then
+        begin
+          vUpperIdx := vUpperIdx + 1;
+          vVolAcum  := vVolAcum + vHistVol[vUpperIdx];
+        end
+        else
+        begin
+          vLowerIdx := vLowerIdx - 1;
+          vVolAcum  := vVolAcum + vHistVol[vLowerIdx];
+        end;
+      end;
+
+      vVAH := vMinP + (vUpperIdx * vPasso);
+      vVAL := vMinP + ((vLowerIdx - 1) * vPasso);
+      vPOC := vMinP + ((vPOCIdx - 0.5) * vPasso);
+
+      // 5. Linhas retas horizontais dinamicas (atualizam por barra e por Timeframe)
+      HorizontalLine(vVAH, cVAH);
+      HorizontalLine(vVAL, cVAL);
+      if (MostrarPOC) then
+        HorizontalLine(vPOC, cPOC);
+    end;
+
+    // 6. Valor do ATR visivel no candle atual (sem ocupar subjanela)
+    if (MostrarATR) then
+      PlotText("ATR(" + FloatToString(PeriodoATR * 1.0, 0) + "): " + FloatToString(vATR, CasasDecimais), cATR, 0, TamanhoFonte);
+  end;
+end;

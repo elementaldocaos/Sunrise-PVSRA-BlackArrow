@@ -1,0 +1,64 @@
+// ============================================================================
+// PVSRA Suite para BlackArrow (NTSL) - Force Numbers (Niveis 000 / 250 / 500 / 750)
+// Adaptacao & Expansao: Sunrise (elementaldocaos)
+// Base original (MT5):  japarico / Fernando H Rosa / Traderathome / Fisher755
+// Licenca:              Uso gratuito para a comunidade (proibida comercializacao)
+// Equivalente aos presets fn1whole, fn2aquarter, fn3quarter e fn4half do PVSRA MT5 v2-1
+// Exemplos de PassoInteiro:
+//   - EURUSD / GBPUSD / AUDUSD (5 digitos): 0.0100 (inteiro a cada 100 pips, quartos a cada 25 pips)
+//   - USDJPY / EURJPY (3 digitos):          1.000  (inteiro a cada 100 pips, quartos a cada 25 pips)
+//   - XAUUSD (Ouro):                        10.0   (quartos a cada 2.50 dolares)
+//   - Indices (NAS100 / US30) ou BTCUSD:    100.0 ou 1000.0
+// ============================================================================
+
+input
+  PassoInteiro(0.0100);   // Distancia entre dois numeros inteiros ("000")
+  FaixasAcimaAbaixo(3);   // Quantos inteiros plotar acima e abaixo do preco atual
+  MostrarMeio(true);      // Exibe niveis de meio (500)
+  MostrarQuartos(true);   // Exibe niveis de quartos (250 e 750)
+
+var
+  vBaseInteiro : Float;
+  vQuarto      : Float;
+  vNivel       : Float;
+  vInicio      : Integer;
+  k            : Integer;
+
+  // Cores oficiais extraidas dos presets fn1..fn4 do PVSRA MT5 v2-1
+  cWhole       : Integer;
+  cHalf        : Integer;
+  cQuarter     : Integer;
+
+begin
+  cWhole   := RGB(28, 55, 100);   // Azul Escuro (fn1whole.set)
+  cHalf    := RGB(0, 70, 0);      // Verde Escuro (fn4half.set)
+  cQuarter := RGB(64, 49, 28);    // Marrom/Bronze Escuro (fn2aquarter / fn3quarter)
+
+  if (LastBarOnChart) and (PassoInteiro > 0) then
+  begin
+    vBaseInteiro := IntPortion(Close / PassoInteiro) * PassoInteiro;
+    vQuarto      := PassoInteiro / 4.0;
+    vInicio      := 0 - FaixasAcimaAbaixo;
+
+    for k := vInicio to FaixasAcimaAbaixo do
+    begin
+      vNivel := vBaseInteiro + (k * PassoInteiro);
+
+      // Nivel Inteiro (000)
+      if (vNivel > 0) then
+        HorizontalLine(vNivel, cWhole);
+
+      // Nivel 1/4 (250)
+      if (MostrarQuartos) and ((vNivel + vQuarto) > 0) then
+        HorizontalLine(vNivel + vQuarto, cQuarter);
+
+      // Nivel 1/2 (500)
+      if (MostrarMeio) and ((vNivel + (2.0 * vQuarto)) > 0) then
+        HorizontalLine(vNivel + (2.0 * vQuarto), cHalf);
+
+      // Nivel 3/4 (750)
+      if (MostrarQuartos) and ((vNivel + (3.0 * vQuarto)) > 0) then
+        HorizontalLine(vNivel + (3.0 * vQuarto), cQuarter);
+    end;
+  end;
+end;

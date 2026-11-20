@@ -1,0 +1,171 @@
+// ============================================================================
+// PVSRA Suite para BlackArrow (NTSL) - Indicador Principal (Grafico de Precos)
+// Adaptacao & Expansao: Sunrise (elementaldocaos)
+// Base original (MT5):  japarico / Fernando H Rosa / Traderathome / Fisher755
+// Licenca:              Uso gratuito para a comunidade (proibida comercializacao)
+//
+// Plots:
+//   - Plot 1 e 2: Dragon-EMA High / Low (EMA 34 H/L) -> Azul Suave (preencher entre Plot 1 e 2 nas Propriedades)
+//   - Plot 3:     Dragon-EMA Center (EMA 34 Close)   -> Branco/Azul Suave Tracejado
+//   - Plot 4:     VWMA 25                            -> Magenta Continua
+//   - Plot 5:     EMA 200                            -> Amarela Tracejada Grossa
+//   - Plot 6:     EMA 100 (opcional, padrao MT5)     -> Branca Suave Tracejada
+//   - Plot 7 e 8: ADR High / Low (14 dias, opcional) -> Vermelho / Verde Menta Tracejados
+// ============================================================================
+
+input
+  MostrarDragon(true);
+  PeriodoDragon(34);
+  MostrarVWMA25(true);
+  PeriodoVWMA(25);
+  MostrarEMA200(true);
+  PeriodoEMA200(200);
+  MostrarEMA100(true);
+  PeriodoEMA100(100);
+  MostrarADR(true);
+  PeriodoADR(14);
+
+var
+  vDragonHigh   : Float;
+  vDragonLow    : Float;
+  vDragonCenter : Float;
+  vVWMA25       : Float;
+  vEMA100       : Float;
+  vEMA200       : Float;
+
+  vSomaADR      : Float;
+  vDiasValidos  : Integer;
+  vADR          : Float;
+  vADRHigh      : Float;
+  vADRLow       : Float;
+  vHighDia      : Float;
+  vLowDia       : Float;
+  i             : Integer;
+
+  cDragonHL     : Integer;
+  cDragonCenter : Integer;
+  cVWMA25       : Integer;
+  cEMA200       : Integer;
+  cEMA100       : Integer;
+  cADRHigh      : Integer;
+  cADRLow       : Integer;
+
+begin
+  cDragonHL     := RGB(65, 105, 175);    // Azul Suave - Bordas do Dragon (EMA 34 High / Low)
+  cDragonCenter := RGB(155, 175, 205);   // Azul-Branco Suave - Centro do Dragon (EMA 34 Close)
+  cVWMA25       := RGB(255, 0, 255);     // Magenta - VWMA 25 Continua
+  cEMA200       := RGB(255, 235, 0);     // Amarelo Ouro - EMA 200 Tracejada Grossa
+  cEMA100       := RGB(180, 185, 200);   // Branco Suave - EMA 100 Tracejada
+  cADRHigh      := RGB(255, 50, 50);     // Vermelho Vivo - ADR High
+  cADRLow       := RGB(0, 220, 140);     // Verde Menta - ADR Low
+
+  // 1. Dragon-EMA (EMA 34 High / Low / Close)
+  if (MostrarDragon) then
+  begin
+    vDragonHigh   := MediaExp(PeriodoDragon, High);
+    vDragonLow    := MediaExp(PeriodoDragon, Low);
+    vDragonCenter := MediaExp(PeriodoDragon, Close);
+
+    Plot(vDragonHigh);
+    SetPlotColor(1, cDragonHL);
+    SetPlotWidth(1, 1);
+    SetPlotStyle(1, 0);
+
+    Plot2(vDragonLow);
+    SetPlotColor(2, cDragonHL);
+    SetPlotWidth(2, 1);
+    SetPlotStyle(2, 0);
+
+    Plot3(vDragonCenter);
+    SetPlotColor(3, cDragonCenter);
+    SetPlotWidth(3, 1);
+    SetPlotStyle(3, 1);
+  end
+  else
+  begin
+    NoPlot(1);
+    NoPlot(2);
+    NoPlot(3);
+  end;
+
+  // 2. VWMA 25 (Magenta Continua)
+  if (MostrarVWMA25) and (PeriodoVWMA > 0) then
+  begin
+    vVWMA25 := VWMA(PeriodoVWMA);
+    Plot4(vVWMA25);
+    SetPlotColor(4, cVWMA25);
+    SetPlotWidth(4, 2);
+    SetPlotStyle(4, 0);
+  end
+  else
+    NoPlot(4);
+
+  // 3. EMA 200 (Amarela Tracejada Grossa)
+  if (MostrarEMA200) and (PeriodoEMA200 > 0) then
+  begin
+    vEMA200 := MediaExp(PeriodoEMA200, Close);
+    Plot5(vEMA200);
+    SetPlotColor(5, cEMA200);
+    SetPlotWidth(5, 3);
+    SetPlotStyle(5, 1);
+  end
+  else
+    NoPlot(5);
+
+  // 4. EMA 100 (Branca Suave Tracejada - padrao template MT5)
+  if (MostrarEMA100) and (PeriodoEMA100 > 0) then
+  begin
+    vEMA100 := MediaExp(PeriodoEMA100, Close);
+    Plot6(vEMA100);
+    SetPlotColor(6, cEMA100);
+    SetPlotWidth(6, 1);
+    SetPlotStyle(6, 1);
+  end
+  else
+    NoPlot(6);
+
+  // 5. MTF ADR Projection (14 dias)
+  if (MostrarADR) and (PeriodoADR > 0) then
+  begin
+    vSomaADR     := 0;
+    vDiasValidos := 0;
+
+    for i := 1 to PeriodoADR do
+    begin
+      vHighDia := HighD(i);
+      vLowDia  := LowD(i);
+      if (vHighDia > 0) and (vLowDia > 0) and (vHighDia >= vLowDia) then
+      begin
+        vSomaADR     := vSomaADR + (vHighDia - vLowDia);
+        vDiasValidos := vDiasValidos + 1;
+      end;
+    end;
+
+    if (vDiasValidos > 0) and (HighD(0) > 0) and (LowD(0) > 0) then
+    begin
+      vADR     := vSomaADR / vDiasValidos;
+      vADRHigh := LowD(0) + vADR;
+      vADRLow  := HighD(0) - vADR;
+
+      Plot7(vADRHigh);
+      SetPlotColor(7, cADRHigh);
+      SetPlotWidth(7, 1);
+      SetPlotStyle(7, 1);
+
+      PlotN(8, vADRLow);
+      SetPlotColor(8, cADRLow);
+      SetPlotWidth(8, 1);
+      SetPlotStyle(8, 1);
+    end
+    else
+    begin
+      NoPlot(7);
+      NoPlot(8);
+    end;
+  end
+  else
+  begin
+    NoPlot(7);
+    NoPlot(8);
+  end;
+end;

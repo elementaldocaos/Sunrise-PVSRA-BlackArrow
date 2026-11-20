@@ -1,0 +1,93 @@
+// ============================================================================
+// PVSRA Suite para BlackArrow (NTSL) - Regra de Coloracao Standalone
+// Adaptacao & Expansao: Sunrise (elementaldocaos)
+// Base original (MT5):  japarico / Fernando H Rosa / Traderathome / Fisher755
+// Licenca:              Uso gratuito para a comunidade (proibida comercializacao)
+// Equivalente ao "#5 Candles Suite (Black)" do template PVSRA MT5 v2-1
+// Use este script se preferir aplicar a coloracao separada do Dragon/EMAs/VAH-VAL
+// ============================================================================
+
+input
+  FonteVolume(1);         // 1 = Quantity (Lotes/Qtd) | 2 = Trades (Tick Volume/Forex) | 3 = Volume (Financeiro)
+  ModoSimples(false);     // false = Standard (Rising + Climax); true = Simple (apenas Climax)
+  PeriodoMediaVol(10);    // Periodo da media de volume PVSRA (padrao = 10)
+  MultRising(1.5);        // Multiplicador de Volume em Ascensao (1.5 = 150%)
+  MultClimax(2.0);        // Multiplicador de Volume Climax (2.0 = 200%)
+
+var
+  vVol          : Float;
+  vSpreadVol    : Float;
+  vSomaVol      : Float;
+  vMediaVol     : Float;
+  vMaxSpreadVol : Float;
+  vTipoPVA      : Integer;  // 0 = Normal | 1 = Rising | 2 = Climax
+  i             : Integer;
+
+  cBullClimax   : Integer;
+  cBearClimax   : Integer;
+  cBullRising   : Integer;
+  cBearRising   : Integer;
+  cBullNormal   : Integer;
+  cBearNormal   : Integer;
+
+begin
+  cBullClimax := RGB(31, 192, 71);     // Verde Climax
+  cBearClimax := RGB(224, 1, 6);       // Vermelho Climax
+  cBullRising := RGB(17, 136, 255);    // Azul Rising
+  cBearRising := RGB(173, 51, 255);    // Violeta Rising
+  cBullNormal := RGB(159, 160, 162);   // Cinza Claro Normal (Alta)
+  cBearNormal := RGB(106, 106, 117);   // Cinza Escuro Normal (Baixa)
+
+  if (FonteVolume = 2) then
+    vVol := Trades
+  else if (FonteVolume = 3) then
+    vVol := Volume
+  else
+    vVol := Quantity;
+
+  vSpreadVol := vVol * (High - Low);
+
+  vTipoPVA := 0;
+  if (CurrentBar > PeriodoMediaVol) and (PeriodoMediaVol > 0) then
+  begin
+    vSomaVol      := 0;
+    vMaxSpreadVol := 0;
+
+    for i := 1 to PeriodoMediaVol do
+    begin
+      vSomaVol := vSomaVol + vVol[i];
+      if (vSpreadVol[i] > vMaxSpreadVol) then
+        vMaxSpreadVol := vSpreadVol[i];
+    end;
+
+    vMediaVol := vSomaVol / PeriodoMediaVol;
+
+    if (vVol > 0) and (vMediaVol > 0) then
+    begin
+      if (vVol >= (vMediaVol * MultClimax)) or
+         ((vMaxSpreadVol > 0) and (vSpreadVol >= vMaxSpreadVol)) then
+        vTipoPVA := 2
+      else if (not ModoSimples) and (vVol >= (vMediaVol * MultRising)) then
+        vTipoPVA := 1;
+    end;
+  end;
+
+  if (Close > Open) then
+  begin
+    if (vTipoPVA = 2) then
+      PaintBar(cBullClimax)
+    else if (vTipoPVA = 1) then
+      PaintBar(cBullRising)
+    else
+      PaintBar(cBullNormal);
+  end
+  else
+  begin
+    if (vTipoPVA = 2) then
+      PaintBar(cBearClimax)
+    else if (vTipoPVA = 1) then
+      PaintBar(cBearRising)
+    else
+      PaintBar(cBearNormal);
+  end;
+end;
