@@ -135,6 +135,6 @@ Caso prefira criar e editar manualmente no **Editor de Estratégias**:
 
 ## Créditos e Licença
 
-* **Sunrise (`@elementaldocaos`):** Idealização e desenvolvimento do `Sunrise_Price_Auction` (VAH/VAL/POC dinâmicos por TF + leitura ATR), adaptação completa da suíte para NTSL/BlackArrow, integração da `VWMA 25` e preset completo.
+* **Sunrise (`@elementaldocaos`):** Idealização do `Sunrise_Price_Auction` (VAH/VAL/POC dinâmicos por TF + leitura ATR), adaptação da suíte para NTSL/BlackArrow e montagem do preset completo.
 * **Base PVSRA original (MT5):** [japarico/MT5-Trading-Related-Japa-Rico](https://github.com/japarico/MT5-Trading-Related-Japa-Rico) · Fernando H Rosa · Traderathome · Fisher755.
 * **Licença:** Uso e distribuição **100% gratuitos** para a comunidade. **Comercialização estritamente proibida** (não vender, alugar ou empacotar para fins comerciais).
