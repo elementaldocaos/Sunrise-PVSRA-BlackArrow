@@ -135,8 +135,9 @@ Caso prefira criar e editar manualmente no **Editor de Estratégias**:
 
 ---
 
-## Créditos e Licença
+## Créditos, Transparência e Licença
 
+* **Nota de transparência (`Sunrise` / `@elementaldocaos`):** Eu **não negocio de forma discricionária** usando este setup de análise técnica visual. Este repositório é apenas uma adaptação comunitária de um método clássico do **Forex Factory** para usuários da BlackArrow. Meus sistemas e pesquisas próprias operam com **mecanismos automatizados quantitativos e econométricos** — conheça mais em **[Sepaul Research](https://sepaulresearch.com)**.
 * **Sunrise (`@elementaldocaos`):** Idealização do `Sunrise_Price_Auction` (VAH/VAL/POC dinâmicos por TF + leitura ATR), adaptação da suíte para NTSL/BlackArrow e montagem do preset completo.
 * **Base PVSRA original (MT5):** [japarico/MT5-Trading-Related-Japa-Rico](https://github.com/japarico/MT5-Trading-Related-Japa-Rico) · Fernando H Rosa · Traderathome · Fisher755.
 * **Licença:** Uso e distribuição **100% gratuitos** para a comunidade. **Comercialização estritamente proibida** (não vender, alugar ou empacotar para fins comerciais).

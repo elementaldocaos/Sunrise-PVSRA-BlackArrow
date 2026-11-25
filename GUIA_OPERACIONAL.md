@@ -1,7 +1,9 @@
 # Guia Operacional — Como Ler o Gráfico e Tomar Decisões com PVSRA + Auction Market
 
-> ⚠️ **Aviso Legal / Disclaimer**
+> ⚠️ **Aviso Legal / Disclaimer & Nota de Transparência**
 > Este guia tem caráter **exclusivamente educacional e informativo**. Nenhuma explicação aqui constitui recomendação de compra/venda, sinal de operação ou consultoria financeira. Operações em mercados financeiros (Ouro/XAUUSD, Forex, Índices, Futuros e Criptomoedas) envolvem **alto risco de perda financeira**. Sempre teste em conta **simulada/demo** antes de operar capital real e respeite seu próprio gerenciamento de risco.
+>
+> **Nota do Autor (Sunrise / `@elementaldocaos`):** Eu **não opero de forma discricionária** utilizando análise técnica visual (PVSRA). Este projeto é apenas uma adaptação técnica para a comunidade BlackArrow de um setup amplamente difundido no **Forex Factory**. A minha atuação e pesquisa própria em mercados financeiros baseiam-se em **mecanismos automatizados quantitativos e econométricos** — confira em **[Sepaul Research](https://sepaulresearch.com)**.
 
 ---
 
