@@ -4,6 +4,8 @@ Suíte completa de **PVSRA (Price, Volume, Support & Resistance Analysis)** + **
 
 ![Preview Sunrise PVSRA BlackArrow](assets/preview.jpg)
 
+> 📖 **Novo no PVSRA?** Leia o **[Guia Operacional Completo (`GUIA_OPERACIONAL.md`)](GUIA_OPERACIONAL.md)** para aprender o papel de cada indicador, como usar VAH/VAL/POC, como calcular stop/lote com o `ATR(14)` e o checklist de tomada de decisão (uso estritamente educacional).
+
 ---
 
 ## Conteúdo do Repositório
